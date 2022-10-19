@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	p rocketmq.Producer
-	c rocketmq.PushConsumer
+	p     rocketmq.Producer
+	pushC rocketmq.PushConsumer
+	pullC rocketmq.PullConsumer
 )
 
 func main() {
@@ -21,13 +22,18 @@ func main() {
 		producer.WithGroupName("MyProducerGroup01"),
 	)
 	// create push consumer
-	c, _ = rocketmq.NewPushConsumer(consumer.WithNameServer(endPoint),
+	pushC, _ = rocketmq.NewPushConsumer(consumer.WithNameServer(endPoint),
+		consumer.WithConsumerModel(consumer.Clustering),
+		consumer.WithGroupName("MyConsumerGroup01"),
+	)
+	// create pull consumer
+	pullC, _ = rocketmq.NewPullConsumer(consumer.WithNameServer(endPoint),
 		consumer.WithConsumerModel(consumer.Clustering),
 		consumer.WithGroupName("MyConsumerGroup01"),
 	)
 	// 创建channel，添加一个chan 确保程序退出前 消费者不被关闭
 	ch := make(chan int)
 	go SubcribeMessage(ch)
-	SendMessage("测试消息发送")
+	SendBatchSyncMessage("测试消息发送")
 	ch <- 1
 }
