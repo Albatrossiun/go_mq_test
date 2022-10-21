@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -95,6 +96,38 @@ func SendDelaySyncMessage(message string) {
 	}
 }
 
+// SendSyncMessageToTheSpecifiedQueue 发送同步消息到指定队列
+func SendSyncMessageToTheSpecifiedQueue(message string) {
+	// 启动生产者
+	err := p.Start()
+	if err != nil {
+		fmt.Printf("start producer error: %s", err.Error())
+		os.Exit(1)
+	}
+
+	// 发送消息
+	for i := 0; i < 10; i++ {
+		msg := message + time.Now().String()
+		que := &primitive.MessageQueue{
+			Topic:      "MyTopic01",
+			BrokerName: "VM-4-6-ubuntu",
+			QueueId:    0,
+		}
+		result, err := p.SendSync(context.Background(), &primitive.Message{
+			Topic: "MyTopic01",
+			Body:  []byte(msg),
+			Queue: que,
+		})
+
+		if err != nil {
+			fmt.Printf("send message error: %s\n", err.Error())
+		} else {
+			fmt.Printf("send message seccess: result=%s\n", result.String())
+		}
+		time.Sleep(1 * time.Second)
+	}
+}
+
 // SendSyncMessage 发送同步消息
 func SendSyncMessage(message string) {
 	// 启动生产者
@@ -121,8 +154,8 @@ func SendSyncMessage(message string) {
 	}
 }
 
-// SubcribeMessage 订阅消息
-func SubcribeMessage(ch chan int) {
+// SubcribeMessageByPuSh 订阅消息
+func SubcribeMessageByPuSh(ch chan int) {
 	// 订阅topic
 	err := pushC.Subscribe("MyTopic01", consumer.MessageSelector{}, func(ctx context.Context, msgs ...*primitive.MessageExt) (consumer.ConsumeResult, error) {
 		for i := range msgs {
@@ -140,7 +173,51 @@ func SubcribeMessage(ch chan int) {
 		fmt.Printf("consumer start error: %s\n", err.Error())
 		os.Exit(-1)
 	}
+	// 在这里阻塞 不要关闭客户端
+	<-ch
 
+	err = pushC.Shutdown()
+	if err != nil {
+		fmt.Printf("shutdown Consumer error: %s\n", err.Error())
+	}
+}
+
+// SubcribeMessageByPull 拉取消息
+func SubcribeMessageByPull(ch chan int, topicName string) {
+	ctx := context.Background()
+	// 默认拉取消息条数为10条
+	nums := 10
+	// 订阅topic
+	messageQueue := pullC.MessageQueues("MyTopic01")
+	if len(messageQueue) == 0 {
+		fmt.Printf("get message queues is empty\n")
+		return
+	}
+	// 获取mq进行最新的偏移
+	offset, err := pullC.Lookup(ctx, messageQueue[0], math.MaxInt64)
+	if err != nil {
+		fmt.Printf("pull mode look up offset err:%s \n", err)
+		return
+	}
+	selector := consumer.MessageSelector{}
+	err = pullC.Subscribe("MyTopic01", selector)
+	if err != nil {
+		fmt.Printf("subscribe message error: %s\n", err.Error())
+	}
+	// 启动consumer
+	err = pullC.Start()
+	if err != nil {
+		fmt.Printf("consumer start error: %s\n", err.Error())
+		os.Exit(-1)
+	}
+	// pull topic
+	pullResult, err := pullC.PullFrom(ctx, messageQueue[0], offset, nums)
+	if err != nil {
+		fmt.Printf("subscribe message error: %s\n", err.Error())
+	}
+	if pullResult != nil {
+		fmt.Printf("============================收到了消息============================ \n msgs[i].Message.Body:[%s]\n", pullResult.GetBody())
+	}
 	// 在这里阻塞 不要关闭客户端
 	<-ch
 

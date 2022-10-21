@@ -33,7 +33,7 @@ func main() {
 	)
 	// 创建channel，添加一个chan 确保程序退出前 消费者不被关闭
 	ch := make(chan int)
-	go SubcribeMessage(ch)
-	SendBatchSyncMessage("测试消息发送")
+	go SubcribeMessageByPull(ch, "MyTopic01")
+	SendSyncMessage("测试消息发送")
 	ch <- 1
 }
