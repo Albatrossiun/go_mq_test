@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+
 	//"github.com/apache/rocketmq-client-go/v2/admin"
 	"github.com/apache/rocketmq-client-go/v2/consumer"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
@@ -122,6 +123,7 @@ func SendSyncMessageToTheSpecifiedQueue(message string) {
 		if err != nil {
 			fmt.Printf("send message error: %s\n", err.Error())
 		} else {
+			fmt.Printf("当前的队列ID : [%d]\n", que.QueueId)
 			fmt.Printf("send message seccess: result=%s\n", result.String())
 		}
 		time.Sleep(1 * time.Second)
@@ -188,6 +190,7 @@ func SubcribeMessageByPull(ch chan int, topicName string) {
 	// 默认拉取消息条数为10条
 	nums := 10
 	// 订阅topic
+	fmt.Println(pullC)
 	messageQueue := pullC.MessageQueues("MyTopic01")
 	if len(messageQueue) == 0 {
 		fmt.Printf("get message queues is empty\n")
