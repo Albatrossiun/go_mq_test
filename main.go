@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/consumer"
 	"github.com/apache/rocketmq-client-go/v2/producer"
@@ -53,30 +51,29 @@ func main() {
 		producer.WithNameServer(endPoint),
 		producer.WithRetry(2),
 		producer.WithGroupName("MyProducerGroup01"),
-		// producer.WithQueueSelector(producer.NewManualQueueSelector()),
+		//producer.WithQueueSelector(producer.NewManualQueueSelector()),
 	)
 	// create push consumer
 	pushC, _ = rocketmq.NewPushConsumer(consumer.WithNameServer(endPoint),
 		consumer.WithConsumerModel(consumer.Clustering),
 		consumer.WithGroupName("MyConsumerGroup01"),
 	)
-	// create pull consumer
-	var err error
-	// consumer.NewPullConsumer(...)
-	pullC, err = rocketmq.NewPullConsumer(consumer.WithNameServer(endPoint),
-		// pullC, err = consumer.NewPullConsumer(
-		consumer.WithNameServer(endPoint),
-		consumer.WithConsumerModel(consumer.Clustering),
-		consumer.WithGroupName("MyConsumerGroup01"),
-	)
-	if err != nil {
-		fmt.Printf("[ERROR][%v]\n", err)
-	}
 	// 创建channel，添加一个chan 确保程序退出前 消费者不被关闭
 	ch := make(chan int)
-	// go SubcribeMessageByPull(ch, "MyTopic01")
-	go SubcribeMessageByPuSh(ch)
-	//SendSyncMessageToTheSpecifiedQueue("测试消息发送")
-	time.Sleep(100000 * time.Second)
+	//go SubcribeMessageByPuSh(ch)
+	SendSyncMessage("测试消息发送")
 	ch <- 1
 }
+
+//// create pull consumer
+//var err error
+//// consumer.NewPullConsumer(...)
+//pullC, err = rocketmq.NewPullConsumer(consumer.WithNameServer(endPoint),
+//	// pullC, err = consumer.NewPullConsumer(
+//	consumer.WithNameServer(endPoint),
+//	consumer.WithConsumerModel(consumer.Clustering),
+//	consumer.WithGroupName("MyConsumerGroup01"),
+//)
+//if err != nil {
+//	fmt.Printf("[ERROR][%v]\n", err)
+//}

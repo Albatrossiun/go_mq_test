@@ -42,7 +42,7 @@ func SendAsyncMessage(message string) {
 	}
 }
 
-// SendBatchSyncMessage 发送延迟同步消息
+// SendBatchSyncMessage 发送批量同步消息
 func SendBatchSyncMessage(message string) {
 	// 启动生产者
 	err := p.Start()
